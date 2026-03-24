@@ -150,8 +150,8 @@ bool pesieve::PeBuffer::dumpPeToFile(
 #endif
 	}
 	if (dumpMode == peconv::PE_DUMP_AUTO) {
-		bool is_raw_alignment_valid = peconv::is_valid_sectons_alignment(vBuf, vBufSize, true);
-		bool is_virtual_alignment_valid = peconv::is_valid_sectons_alignment(vBuf, vBufSize, false);
+		bool is_raw_alignment_valid = peconv::is_valid_sections_alignment(vBuf, vBufSize, true);
+		bool is_virtual_alignment_valid = peconv::is_valid_sections_alignment(vBuf, vBufSize, false);
 #ifdef _DEBUG
 		std::cout << "Is raw alignment valid: " << is_raw_alignment_valid << std::endl;
 		std::cout << "Is virtual alignment valid: " << is_virtual_alignment_valid << std::endl;
