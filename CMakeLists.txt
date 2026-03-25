@@ -47,9 +47,14 @@ set ( SIGFIND_DIR "${PROJECT_SOURCE_DIR}/${M_SIGFIND}" CACHE PATH "SigFinder mai
 include_directories ( ${PECONV_DIR}/include )
 include_directories ( ${SIGFIND_DIR}/include )
 
+# options for LibPEConv
+set(PECONV_LOG_USE_DEBUGOUT ON CACHE BOOL "" FORCE) # no logs from libPEconv on stdout, redirect all to Debug output
+mark_as_advanced(PECONV_LOG_USE_DEBUGOUT) # hide the option from menu
+
 # libs
 add_subdirectory (${M_PARSER})
 set ( PECONV_LIB $<TARGET_FILE:libpeconv> CACHE PATH "PEConvLib library path" )
+
 add_subdirectory(${M_SIGFIND})
 set ( SIGFIND_LIB $<TARGET_FILE:sig_finder> CACHE PATH "SigFinder library path" )
 
@@ -226,7 +231,7 @@ set (rsrc
 	resources.h
 	pe_sieve_ver_short.h
 	pe_sieve_res.rc
-	pe-sieve.manifest 
+	pe-sieve.manifest
 )
 
 # set filters in Visual Studio project:
