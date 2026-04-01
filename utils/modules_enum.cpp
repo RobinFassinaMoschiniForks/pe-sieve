@@ -3,8 +3,6 @@
 #include <psapi.h>
 #pragma comment(lib,"psapi.lib")
 
-#include <iostream>
-
 namespace {
 	size_t _enum_modules(IN HANDLE hProcess, IN OUT HMODULE hMods[], DWORD hModsMax, IN DWORD filters) //throws exceptions
 	{
@@ -45,14 +43,14 @@ size_t pesieve::util::enum_modules(IN HANDLE hProcess, IN OUT std::vector<HMODUL
 	while (true) {
 		modules.assign(capacity, nullptr);
 
-		const DWORD size_in_bytes = static_cast<DWORD>(modules.size() * sizeof(HMODULE));
+		const size_t size_in_bytes = modules.size() * sizeof(HMODULE);
 		if (size_in_bytes > MAXDWORD) {
 			throw std::runtime_error("Module buffer too large.");
 		}
 		const size_t count = _enum_modules(
 			hProcess,
 			modules.data(),
-			size_in_bytes,
+			static_cast<DWORD>(size_in_bytes),
 			filters
 		);
 
