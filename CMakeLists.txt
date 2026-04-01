@@ -2,8 +2,29 @@ cmake_minimum_required (VERSION 3.12)
 project (pe-sieve)
 
 option(PESIEVE_BUILD_TESTING "Enable testing for PE-sieve" OFF)
-option(PESIEVE_AS_DLL "Build PE-sieve as a DLL" OFF)
-option(PESIEVE_AS_STATIC_LIB "Build PE-Sieve as a static library" OFF)
+
+set(PESIEVE_BUILD_MODE "EXE" CACHE STRING "Build PE-sieve as EXE, DLL, or static LIB")
+set_property(CACHE PESIEVE_BUILD_MODE PROPERTY STRINGS EXE DLL STATIC)
+
+if(NOT PESIEVE_BUILD_MODE STREQUAL "EXE"
+   AND NOT PESIEVE_BUILD_MODE STREQUAL "DLL"
+   AND NOT PESIEVE_BUILD_MODE STREQUAL "STATIC")
+	message(FATAL_ERROR
+		"Invalid PESIEVE_BUILD_MODE '${PESIEVE_BUILD_MODE}'. Choose: EXE DLL STATIC"
+	)
+endif()
+
+set(PESIEVE_IS_EXE OFF)
+set(PESIEVE_IS_DLL OFF)
+set(PESIEVE_IS_STATIC OFF)
+
+if(PESIEVE_BUILD_MODE STREQUAL "EXE")
+	set(PESIEVE_IS_EXE ON)
+elseif(PESIEVE_BUILD_MODE STREQUAL "DLL")
+	set(PESIEVE_IS_DLL ON)
+elseif(PESIEVE_BUILD_MODE STREQUAL "STATIC")
+	set(PESIEVE_IS_STATIC ON)
+endif()
 
 include_directories (
 	include
@@ -60,7 +81,7 @@ set ( PECONV_LIB $<TARGET_FILE:libpeconv> CACHE PATH "PEConvLib library path" )
 add_subdirectory(${M_SIGFIND})
 set ( SIGFIND_LIB $<TARGET_FILE:sig_finder> CACHE PATH "SigFinder library path" )
 
-if( NOT PESIEVE_AS_STATIC_LIB AND NOT PESIEVE_AS_DLL)
+if(PESIEVE_IS_EXE)
 	set ( M_PARAMKIT_LIB "paramkit" )
 
 	set (PARAMKIT_DIR "${CMAKE_SOURCE_DIR}/${M_PARAMKIT_LIB}/${M_PARAMKIT_LIB}" CACHE PATH "ParamKit main path" )
@@ -262,25 +283,18 @@ set (library_export_hdrs
 	include/pe_sieve_api.h
 	include/pe_sieve_return_codes.h
 )
-if(PESIEVE_AS_STATIC_LIB)
-	set(LIBRARY_TYPE STATIC)
+if(PESIEVE_IS_STATIC)
 	# Install libpeconv as well since with static libraries a user has to link against both
 	set(PECONV_LIB_INSTALL ON CACHE INTERNAL "")
-elseif(PESIEVE_AS_DLL)
-	set(LIBRARY_TYPE SHARED)
-endif()
-
-if (PESIEVE_AS_DLL AND PESIEVE_AS_STATIC_LIB)
-	message(FATAL_ERROR "Choose either PESIEVE_AS_STATIC_LIB or PESIEVE_AS_DLL (or none of them, to build as an EXE)")
 endif()
 
 # Choose to build the library or EXE
-if(PESIEVE_AS_STATIC_LIB OR PESIEVE_AS_DLL)
+if(PESIEVE_IS_STATIC OR PESIEVE_IS_DLL)
 	set (lib_srcs
 		pe_sieve_api.cpp
 		${srcs}
 	)
-	if (PESIEVE_AS_DLL)
+	if (PESIEVE_IS_DLL)
 		set (lib_srcs
 			dll_main.cpp
 			main.def
@@ -288,10 +302,15 @@ if(PESIEVE_AS_STATIC_LIB OR PESIEVE_AS_DLL)
 		)
 	endif()
 
-	add_library ( ${PROJECT_NAME} ${LIBRARY_TYPE} ${library_export_hdrs} ${hdrs} ${lib_srcs} ${rsrc} )
+	if(PESIEVE_IS_STATIC)
+		add_library ( ${PROJECT_NAME} STATIC ${library_export_hdrs} ${hdrs} ${lib_srcs} ${rsrc} )
+		target_compile_definitions(${PROJECT_NAME} PUBLIC PESIEVE_STATIC_LIB)
+	elseif(PESIEVE_IS_DLL)
+		add_library ( ${PROJECT_NAME} SHARED ${library_export_hdrs} ${hdrs} ${lib_srcs} ${rsrc} )
+		target_compile_definitions(${PROJECT_NAME} PUBLIC PESIEVE_SHARED_LIB)
+		set_source_files_properties(main.def PROPERTIES HEADER_FILE_ONLY TRUE)
+	endif()
 
-	set_source_files_properties(main.def PROPERTIES HEADER_FILE_ONLY TRUE)
-	target_compile_definitions(${PROJECT_NAME} PUBLIC PESIEVE_${LIBRARY_TYPE}_LIB)
 	INSTALL(FILES ${library_export_hdrs}
 		DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 	)
@@ -312,30 +331,26 @@ set (used_libs
 # dependencies
 add_dependencies( ${PROJECT_NAME} libpeconv sig_finder )
 
-if(PESIEVE_AS_STATIC_LIB OR PESIEVE_AS_DLL)
+if(PESIEVE_IS_STATIC OR PESIEVE_IS_DLL)
 	include(GNUInstallDirs)
 	install(TARGETS ${PROJECT_NAME}
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 	)
-
 	target_link_libraries ( ${PROJECT_NAME} ${used_libs} )
-
 else()
-
 	# add Paramkit only if build as an exe
 	# dependencies
 	add_dependencies(${PROJECT_NAME} paramkit )
 	target_link_libraries ( ${PROJECT_NAME} ${used_libs} ${PARAMKIT_LIB} )
-
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 	target_link_options( ${PROJECT_NAME} PRIVATE "/MANIFEST:NO")
 endif()
 
-if (NOT PESIEVE_AS_STATIC_LIB)
+if (NOT PESIEVE_IS_STATIC)
 	install(TARGETS ${PROJECT_NAME}
 		DESTINATION ${CMAKE_INSTALL_PREFIX} COMPONENT ${PROJECT_NAME}
 	)
