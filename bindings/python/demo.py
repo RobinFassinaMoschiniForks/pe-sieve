@@ -27,7 +27,9 @@ params.use_cache = False
 params.json_lvl = pesieve.t_json_level.JSON_BASIC
 params.results_filter = pesieve.t_results_filter.SHOW_SUSPICIOUS
 params.output_dir = os.fsencode(os.getcwd())
-params.modules_ignored = pesieve.PARAM_STRING(length=10, buffer=b'ignored1;ignored2')
+ignored = b'ignored1;ignored2'
+params.modules_ignored = pesieve.PARAM_STRING(length=len(ignored), buffer=ignored)
+params.pattern_file = pesieve.PARAM_STRING(length=0, buffer=None)
 
 # run the function
 (report, json, out_size) = pesieve.PESieve_scan_ex(
