@@ -166,9 +166,6 @@ pesieve::t_report pesieve::ProcessScanReport::generateSummary() const
 		if (ModuleScanReport::get_scan_status(report) == SCAN_SUSPICIOUS) {
 			summary.suspicious++;
 		}
-		if (ModuleScanReport::get_scan_status(report) == SCAN_ERROR) {
-			summary.errors++;
-		}
 	}
 	summary.replaced = MASK_TO_DWORD(countHdrsReplaced());
 	summary.patched = MASK_TO_DWORD(countSuspiciousPerType(REPORT_CODE_SCAN));
