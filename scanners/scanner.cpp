@@ -347,13 +347,13 @@ ModuleScanReport* pesieve::ProcessScanner::scanForMappingMismatch(ModuleData& mo
 	return scan_report;
 }
 
-size_t pesieve::ProcessScanner::scanModules(ProcessScanReport &pReport)  //throws exceptions
+size_t pesieve::ProcessScanner::scanModules(ProcessScanReport &pReport) //throws exceptions
 {
-	HMODULE hMods[1024] = { 0 };
-	const size_t modules_count = enum_modules(this->processHandle, hMods, sizeof(hMods), LIST_MODULES_ALL);
-	if (modules_count == 0) {
+	std::vector<HMODULE> hMods;
+	if (!enum_modules(this->processHandle, hMods, LIST_MODULES_ALL)) {
 		return 0;
 	}
+	const size_t modules_count = hMods.size();
 	if (args.imprec_mode != PE_IMPREC_NONE || args.iat != pesieve::PE_IATS_NONE || args.threads) {
 		pReport.exportsMap = new peconv::ExportsMapper();
 	}
@@ -440,14 +440,15 @@ size_t pesieve::ProcessScanner::scanModulesIATs(ProcessScanReport &pReport) //th
 	if (!pReport.exportsMap) {
 		return 0; // this feature cannot work without Exports Map
 	}
-	HMODULE hMods[1024];
-	const size_t modules_count = enum_modules(this->processHandle, hMods, sizeof(hMods), LIST_MODULES_ALL);
-	if (modules_count == 0) {
+	std::vector<HMODULE> hMods;
+	if (!enum_modules(this->processHandle, hMods, LIST_MODULES_ALL)) {
 		return 0;
 	}
+	const size_t modules_count = hMods.size();
 	if (!args.quiet) {
 		std::cout << "Scanning for IAT hooks: " << modules_count << " modules." << std::endl;
 	}
+
 	DWORD start_tick = GetTickCount();
 	size_t counter = 0;
 	for (counter = 0; counter < modules_count && is_running(this->processHandle); counter++) {
