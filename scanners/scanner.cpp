@@ -525,8 +525,10 @@ size_t pesieve::ProcessScanner::scanThreads(ProcessScanReport& pReport) //throws
 		
 		ThreadScanner scanner(this->processHandle, this->isReflection, pReport.isManaged, info, pReport.modulesInfo, pReport.exportsMap, &symbols);
 		ThreadScanReport* report = scanner.scanRemote();
-		pReport.appendReport(report);
-		scanned_count++;
+		if (report) {
+			pReport.appendReport(report);
+			scanned_count++;
+		}
 	}
 	if (!args.quiet) {
 		const DWORD total_time = GetTickCount() - start_tick;
