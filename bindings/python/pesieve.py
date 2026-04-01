@@ -3,8 +3,8 @@
 import ctypes
 import os
 
-PESIEVE_MIN_VER = 0x040000 # minimal version of the PE-sieve DLL to work with this wrapper
-PESIEVE_MAX_VER = 0x040101 # maximal version of the PE-sieve DLL to work with this wrapper
+PESIEVE_MIN_VER = 0x040002 # minimal version of the PE-sieve DLL to work with this wrapper
+PESIEVE_MAX_VER = 0x040102 # maximal version of the PE-sieve DLL to work with this wrapper
 
 ERROR_SCAN_FAILURE = -1
 MAX_PATH =  260
@@ -175,11 +175,23 @@ def init():
 		else:
 			raise
 
-	PESieve_version = ctypes.cast(lib.PESieve_version, ctypes.POINTER(ctypes.c_uint32)).contents.value
+	PESieve_version = ctypes.c_uint32.in_dll(lib, "PESieve_version").value
 	if (PESieve_version < PESIEVE_MIN_VER or PESieve_version > PESIEVE_MAX_VER):
 		dll_version_str = version_to_str(PESieve_version)
 		exception_msg = f"Version mismatch: the PE-sieve.dll version ({dll_version_str}) doesn't match the bindings version"
 		raise Exception(exception_msg)
+
+	lib.PESieve_scan.argtypes = [ctypes.POINTER(t_params)]
+	lib.PESieve_scan.restype = t_report
+
+	lib.PESieve_scan_ex.argtypes = [
+		ctypes.POINTER(t_params),
+		t_report_type,
+		ctypes.c_char_p,
+		ctypes.c_size_t,
+		ctypes.POINTER(ctypes.c_size_t),
+	]
+	lib.PESieve_scan_ex.restype = t_report
 
 def PESieve_help():
 	if not lib:
@@ -187,32 +199,48 @@ def PESieve_help():
 	lib.PESieve_help()
 
 def PESieve_scan(params: t_params) -> t_report:
-	if not lib:
-		init()
-	if (not isinstance(params, t_params)):
-		raise TypeError
+    if not lib:
+        init()
+    if not isinstance(params, t_params):
+        raise TypeError("params must be t_params")
 
-	params_size = ctypes.sizeof(t_params)
-	pp = ctypes.create_string_buffer(bytes(params), params_size)
-	pr = ctypes.create_string_buffer(ctypes.sizeof(t_report))
-	lib.PESieve_scan(pr, pp)
-	report = t_report.from_buffer(pr)
-	return report
+    return lib.PESieve_scan(ctypes.byref(params))
 
-def PESieve_scan_ex(params: t_params, rtype: t_report_type, buf_size: int) -> (t_report, str, int):
-	if not lib:
-		init()
-	if (not isinstance(params, t_params)):
-		raise TypeError
+def PESieve_scan_ex(params: t_params, rtype: t_report_type, buf_size: int) -> tuple[t_report, str, int]:
+    if not lib:
+        init()
+    if not isinstance(params, t_params):
+        raise TypeError("params must be t_params")
+    if buf_size < 0:
+        raise ValueError("buf_size must be >= 0")
 
-	pp = ctypes.create_string_buffer(bytes(params), ctypes.sizeof(t_params))
-	pr = ctypes.create_string_buffer(ctypes.sizeof(t_report))
-	out_size = ctypes.c_ulong(0)
-	json_buf = ctypes.create_string_buffer(buf_size)
-	lib.PESieve_scan_ex(pr, pp, rtype, json_buf, buf_size, ctypes.byref(out_size))
-	report = t_report.from_buffer(pr)
-	if (out_size.value):
-		json_str = json_buf.value.decode('UTF-8')
-	else:
-		json_str = ""
-	return (report, json_str, out_size.value)
+    out_size = ctypes.c_size_t(0)
+
+    if buf_size > 0:
+        json_buf = ctypes.create_string_buffer(buf_size)
+        report = lib.PESieve_scan_ex(
+            ctypes.byref(params),
+            rtype,
+            ctypes.cast(json_buf, ctypes.c_char_p),
+            ctypes.c_size_t(buf_size),
+            ctypes.byref(out_size)
+        )
+        json_str = json_buf.value.decode("utf-8", errors="replace")
+    else:
+        report = lib.PESieve_scan_ex(
+            ctypes.byref(params),
+            rtype,
+            None,
+            ctypes.c_size_t(0),
+            ctypes.byref(out_size)
+        )
+        json_str = ""
+
+    return (report, json_str, out_size.value)
+
+def PESieve_scan_ex_auto(params: t_params, rtype: t_report_type):
+    report, json_str, needed = PESieve_scan_ex(params, rtype, 0)
+    if needed == 0:
+        return report, ""
+    report, json_str, needed2 = PESieve_scan_ex(params, rtype, needed)
+    return report, json_str
