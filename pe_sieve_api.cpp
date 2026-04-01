@@ -27,16 +27,17 @@ size_t print_report(const pesieve::ReportEx& report, const pesieve::t_params arg
 	return report_len;
 }
 
-PEsieve_report PESIEVE_API_FUNC PESieve_scan_ex(IN const PEsieve_params &args, IN const PEsieve_rtype rtype, OUT char* json_buf, IN size_t json_buf_size, OUT size_t* needed_size)
+PEsieve_report PESIEVE_API_FUNC PESieve_scan_ex(IN const PEsieve_params *args, IN const PEsieve_rtype rtype, OUT char* json_buf, IN size_t json_buf_size, OUT size_t* needed_size)
 {
-	if (IsBadReadPtr((LPVOID)&args, sizeof(PEsieve_params)) ) {
+	if (!args || IsBadReadPtr((LPVOID)args, sizeof(PEsieve_params))) {
 		pesieve::t_report empty = { 0 };
 		empty.errors = 1;
 		return empty;
 	}
-	const pesieve::ReportEx* report = pesieve::scan_and_dump(args);
+	const PEsieve_params _args = *args;
+	const pesieve::ReportEx* report = pesieve::scan_and_dump(_args);
 	pesieve::t_report summary = { 0 };
-	summary.pid = args.pid;
+	summary.pid = _args.pid;
 	summary.errors = pesieve::ERROR_SCAN_FAILURE;
 	if (!report) {
 		return summary;
@@ -57,7 +58,7 @@ PEsieve_report PESIEVE_API_FUNC PESieve_scan_ex(IN const PEsieve_params &args, I
 
 	//print the report (only if any valid output buffer was passed)
 	if (json_buf || needed_size) {
-		const size_t report_size = print_report(*report, args, rtype, json_buf, json_buf_size);
+		const size_t report_size = print_report(*report, _args, rtype, json_buf, json_buf_size);
 		if (needed_size) {
 			*needed_size = report_size;
 		}
@@ -66,7 +67,7 @@ PEsieve_report PESIEVE_API_FUNC PESieve_scan_ex(IN const PEsieve_params &args, I
 	return summary;
 }
 
-PEsieve_report PESIEVE_API_FUNC PESieve_scan(IN const PEsieve_params &args)
+PEsieve_report PESIEVE_API_FUNC PESieve_scan(IN const PEsieve_params *args)
 {
 	return PESieve_scan_ex(args, REPORT_NONE, nullptr, 0, nullptr);
 }
