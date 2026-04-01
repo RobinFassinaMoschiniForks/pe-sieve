@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Requires Python 3.9+
 
 import ctypes
 import os
