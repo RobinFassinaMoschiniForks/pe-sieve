@@ -36,7 +36,6 @@ size_t pesieve::util::enum_modules(IN HANDLE hProcess, IN OUT std::vector<HMODUL
 	if (hProcess == nullptr) {
 		return 0;
 	}
-	size_t count = 0;
 	const size_t max_count = 1024 * 3;
 	size_t capacity = 1024;
 
