@@ -60,7 +60,7 @@ PEsieve_report PESIEVE_API_FUNC PESieve_scan_ex(IN const PEsieve_params *args, I
 	if (json_buf || needed_size) {
 		const size_t report_size = print_report(*report, _args, rtype, json_buf, json_buf_size);
 		if (needed_size) {
-			*needed_size = report_size;
+			*needed_size = report_size + 1;// including the '\0' terminator
 		}
 	}
 	delete report;
