@@ -145,7 +145,7 @@ bool pesieve::util::is_normal_inaccessible(DWORD state, DWORD mapping_type, DWOR
 bool pesieve::PatternMatcher::isReady()
 {
 	util::MutexLocker guard(mainMatcherMutex);
-	return (mainMatcher.isEnd()) ? false : true;
+	return _isReady();
 }
 
 size_t pesieve::PatternMatcher::loadPatternFile(const char* filename)
@@ -181,11 +181,12 @@ bool pesieve::PatternMatcher::initShellcodePatterns()
 
 size_t pesieve::PatternMatcher::findAllPatterns(BYTE* loadedData, size_t loadedSize, std::vector<sig_finder::Match>& allMatches)
 {
-	if (!isReady()) {
-		return false;
+	util::MutexLocker guard(mainMatcherMutex);
+	if (!_isReady()) {
+		return 0;
 	}
 	if (peconv::is_padding(loadedData, loadedSize, 0)) {
-		return false;
+		return 0;
 	}
 	const size_t matches = sig_finder::find_all_matches(mainMatcher, loadedData, loadedSize, allMatches);
 	return matches;

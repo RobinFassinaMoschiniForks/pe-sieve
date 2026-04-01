@@ -52,6 +52,7 @@ namespace pesieve {
 		size_t filterCustom(::std::vector<sig_finder::Match>& allMatches, ::std::vector<sig_finder::Match>& customPatternMatches);
 
 	protected:
+		bool _isReady() { return (mainMatcher.isEnd()) ? false : true; }
 		sig_finder::Node mainMatcher;
 		pesieve::util::Mutex mainMatcherMutex;
 	};
