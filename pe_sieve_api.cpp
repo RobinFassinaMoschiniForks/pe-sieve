@@ -18,12 +18,15 @@ size_t print_report(const pesieve::ReportEx& report, const pesieve::t_params arg
 	size_t level = 1;
 	std::string report_str = report_to_json(report, rtype, args.results_filter, args.json_lvl, level);
 	const size_t report_len = report_str.length();
+	if (!report_len) return 0;
+
+	const size_t report_size = report_len + 1;// including the '\0' terminator
 	if (json_buf && json_buf_size) {
 		::memset(json_buf, 0, json_buf_size);
 		size_t max_len = report_len <= (json_buf_size - 1) ? report_len : (json_buf_size - 1);
 		::memcpy(json_buf, report_str.c_str(), max_len);
 	}
-	return report_len;
+	return report_size;
 }
 
 PEsieve_report PESIEVE_API_FUNC PESieve_scan_ex(IN const PEsieve_params *args, IN const PEsieve_rtype rtype, OUT char* json_buf, IN size_t json_buf_size, OUT size_t* needed_size)
@@ -57,9 +60,9 @@ PEsieve_report PESIEVE_API_FUNC PESieve_scan_ex(IN const PEsieve_params *args, I
 
 	//print the report (only if any valid output buffer was passed)
 	if (json_buf || needed_size) {
-		const size_t report_len = print_report(*report, _args, rtype, json_buf, json_buf_size);
-		if (needed_size && report_len) {
-			*needed_size = report_len + 1;// including the '\0' terminator
+		const size_t report_size = print_report(*report, _args, rtype, json_buf, json_buf_size);
+		if (needed_size) {
+			*needed_size = report_size;
 		}
 	}
 	delete report;
