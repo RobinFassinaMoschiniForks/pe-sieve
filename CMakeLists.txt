@@ -33,7 +33,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	endif()
 endif()
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+if (MSVC)
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+endif()
 
 # modules:
 set ( M_PARSER "libpeconv/libpeconv" )
