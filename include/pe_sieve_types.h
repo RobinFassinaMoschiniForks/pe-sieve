@@ -139,6 +139,7 @@ namespace pesieve {
 		bool json_output;       ///< display the final summary as the JSON report
 		bool make_reflection;   ///< operate on a process reflection rather than on the live process (this allows i.e. to force-read inaccessible pages)
 		bool use_cache;      ///< enable cache for the scanned modules
+		bool download_symbols; /// < allow to download symbols when they are referenced
 		t_json_level json_lvl;  ///< level of the details of the JSON report
 		t_results_filter results_filter; ///< what type of results should be included in the report
 		char output_dir[MAX_PATH + 1];  ///< the root directory where the output should be saved (default: current directory)
