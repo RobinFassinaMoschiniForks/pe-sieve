@@ -127,9 +127,11 @@ public:
 		const std::string fullPathStr = BuildSymbolPath(enableAutoDownload);
 		const char* pathPtr = fullPathStr.empty() ? nullptr : fullPathStr.c_str();
 		const BOOL isOk = InitDbgHelpSession(processHandle, pathPtr);
+#ifdef _DEBUG
 		if (isOk) {
 			printf("Symbols initialized with path: %s\n", fullPathStr.c_str());
 		}
+#endif // _DEBUG
 		return isOk == TRUE;
 	}
 
